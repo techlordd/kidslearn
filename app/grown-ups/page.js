@@ -1,22 +1,75 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { StatusBar } from '@/components/Shell';
 import { Bar, Block, Loading, Tile } from '@/components/Ui';
 import { orderedTopics } from '@/lib/curriculum';
 import { summarise, useProgress } from '@/lib/progress';
+import { useProfiles, AVATARS } from '@/lib/profiles';
+import { getPin, setPin as savePin } from '@/lib/pin';
 import { levelFor } from '@/lib/game';
-
-const AVATARS = ['🦜', '🦊', '🐼', '🐸', '🦖', '🐙', '🦄', '🐝'];
 
 export default function GrownUpsPage() {
   const { state, loaded, setProfile, resetEverything } = useProgress();
+  const { profiles, activeId, deleteProfile, switchPlayer } = useProfiles();
+  const router = useRouter();
   const topics = useMemo(() => orderedTopics('phonics', state.library), [state.library]);
   const stats = useMemo(() => summarise(state, topics), [state, topics]);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  if (!loaded) return <Loading />;
+  const [pin, setPinState] = useState(null); // null = not loaded yet
+  const [unlocked, setUnlocked] = useState(false);
+  const [entry, setEntry] = useState('');
+  const [pinError, setPinError] = useState(false);
+  const [editingPin, setEditingPin] = useState(false);
+  const [newPin, setNewPin] = useState('');
+
+  useEffect(() => {
+    setPinState(getPin());
+  }, []);
+
+  if (!loaded || pin === null) return <Loading />;
+
+  if (pin && !unlocked) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-5">
+        <p className="text-5xl">🔒</p>
+        <h1 className="mt-3 text-xl font-bold">Grown-ups only</h1>
+        <p className="mt-1 text-sm text-inkSoft">Enter the PIN to continue.</p>
+        <input
+          value={entry}
+          onChange={(e) => {
+            setEntry(e.target.value.replace(/\D/g, '').slice(0, 4));
+            setPinError(false);
+          }}
+          inputMode="numeric"
+          type="password"
+          maxLength={4}
+          autoFocus
+          className="mt-5 w-32 rounded-2xl border-2 border-sand bg-paper px-4 py-3 text-center text-2xl tracking-[0.5em] outline-none focus:border-sky"
+        />
+        {pinError && <p className="mt-2 text-sm font-semibold text-coral">That&rsquo;s not it — try again.</p>}
+        <Block
+          tone="leaf"
+          size="lg"
+          className="mt-5 max-w-xs"
+          disabled={entry.length !== 4}
+          onClick={() => {
+            if (entry === pin) setUnlocked(true);
+            else setPinError(true);
+          }}
+        >
+          Unlock
+        </Block>
+        <Link href="/" className="mt-6 text-sm font-semibold text-inkSoft underline underline-offset-4">
+          Back to playing
+        </Link>
+      </main>
+    );
+  }
+
   const lvl = levelFor(state.xp);
 
   return (
@@ -139,6 +192,100 @@ export default function GrownUpsPage() {
               </button>
             ))}
           </div>
+        </Tile>
+
+        {profiles.length > 1 && (
+          <Tile className="mt-4">
+            <p className="font-semibold">Players on this device</p>
+            <p className="mt-1 text-sm text-inkSoft">Switch who&rsquo;s playing, or remove a player.</p>
+            <div className="mt-3 space-y-2">
+              {profiles.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-2xl border-2 border-sand bg-paper px-3 py-2"
+                >
+                  <span className="text-2xl">{p.avatar}</span>
+                  <span className="flex-1 truncate text-sm font-semibold">
+                    {p.name}
+                    {p.id === activeId && <span className="text-inkSoft"> (this one)</span>}
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Remove ${p.name} and all their progress? This cannot be undone.`)) {
+                        deleteProfile(p.id);
+                        if (p.id === activeId) router.push('/');
+                      }
+                    }}
+                    className="text-xs font-semibold text-coral underline underline-offset-4"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <Block
+              tone="white"
+              className="mt-3"
+              onClick={() => {
+                switchPlayer();
+                router.push('/');
+              }}
+            >
+              Switch player
+            </Block>
+          </Tile>
+        )}
+
+        <Tile className="mt-4">
+          <p className="font-semibold">Grown-up PIN</p>
+          <p className="mt-1 text-sm text-inkSoft">
+            {pin
+              ? 'A PIN keeps little fingers out of this page.'
+              : 'Set a PIN so kids can’t change settings or clear progress.'}
+          </p>
+          {editingPin ? (
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                inputMode="numeric"
+                type="password"
+                maxLength={4}
+                placeholder="4 digits"
+                className="w-28 rounded-2xl border-2 border-sand bg-paper px-4 py-2 text-center tracking-[0.4em] outline-none focus:border-sky"
+              />
+              <Block
+                tone="leaf"
+                disabled={newPin.length !== 4}
+                onClick={() => {
+                  savePin(newPin);
+                  setPinState(newPin);
+                  setEditingPin(false);
+                  setNewPin('');
+                }}
+              >
+                Save
+              </Block>
+            </div>
+          ) : (
+            <div className="mt-3 flex gap-3">
+              <Block tone="white" onClick={() => setEditingPin(true)} className="flex-1">
+                {pin ? 'Change PIN' : 'Set a PIN'}
+              </Block>
+              {pin && (
+                <Block
+                  tone="white"
+                  className="flex-1"
+                  onClick={() => {
+                    savePin('');
+                    setPinState('');
+                  }}
+                >
+                  Remove PIN
+                </Block>
+              )}
+            </div>
+          )}
         </Tile>
 
         <Tile className="mt-4">
