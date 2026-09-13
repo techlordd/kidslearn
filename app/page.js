@@ -6,78 +6,25 @@ import { StatusBar } from '@/components/Shell';
 import { Block, Loading, Pip, SpeechBubble, Stars, Tile } from '@/components/Ui';
 import { SUBJECTS, orderedTopics } from '@/lib/curriculum';
 import { useProgress, summarise } from '@/lib/progress';
+import { useProfiles, AVATARS } from '@/lib/profiles';
 import { DAILY_GOAL } from '@/lib/game';
 
-const AVATARS = ['🦜', '🦊', '🐼', '🐸', '🦖', '🐙', '🦄', '🐝'];
-
 export default function Home() {
-  const { state, loaded, setProfile } = useProgress();
-  const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState('🦜');
+  const { ready, profiles, activeId, selectProfile, createProfile } = useProfiles();
+  const { state, loaded } = useProgress();
 
   const topics = useMemo(() => orderedTopics('phonics', state.library), [state.library]);
   const stats = useMemo(() => summarise(state, topics), [state, topics]);
 
-  if (!loaded) return <Loading />;
+  if (!ready) return <Loading />;
 
-  /* First run: ask for a name once, then never again. */
-  if (!state.name) {
-    return (
-      <main className="px-5 pt-12">
-        <div className="text-center">
-          <Pip size={80} mood="wave" className="animate-wiggle" />
-          <h1 className="mt-4 text-3xl font-bold">Sound Safari</h1>
-          <p className="mt-2 text-inkSoft">
-            Hi! I am Pip. I repeat every sound you learn. What shall I call you?
-          </p>
-        </div>
-
-        <Tile className="mt-8">
-          <label className="text-sm font-semibold" htmlFor="learner-name">
-            Your name
-          </label>
-          <input
-            id="learner-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Ada"
-            maxLength={16}
-            className="mt-2 w-full rounded-2xl border-2 border-sand bg-paper px-4 py-3 text-lg outline-none focus:border-sky"
-          />
-
-          <p className="mt-5 text-sm font-semibold">Pick your buddy</p>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {AVATARS.map((a) => (
-              <button
-                key={a}
-                onClick={() => setAvatar(a)}
-                className={`rounded-2xl border-2 p-3 text-3xl ${
-                  avatar === a ? 'border-mango bg-mango/20' : 'border-sand bg-white'
-                }`}
-                aria-label={`Choose ${a}`}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-
-          <Block
-            tone="leaf"
-            size="lg"
-            className="mt-6"
-            disabled={!name.trim()}
-            onClick={() => setProfile(name.trim(), avatar)}
-          >
-            Start exploring
-          </Block>
-        </Tile>
-
-        <p className="mt-6 text-center text-xs text-inkSoft">
-          Nothing is sent anywhere — progress is saved on this device only.
-        </p>
-      </main>
-    );
+  /* No player picked yet on this device: a one-tap "who's playing" screen —
+     no typing, no password, straight back into their own progress. */
+  if (!activeId) {
+    return <PlayerPicker profiles={profiles} onPick={selectProfile} onCreate={createProfile} />;
   }
+
+  if (!loaded) return <Loading />;
 
   const nextUp = topics.find((t) => (state.topics[t.id]?.stars || 0) === 0) || topics[0];
   const started = topics.some((t) => state.topics[t.id]?.lessonDone);
@@ -142,6 +89,114 @@ export default function Home() {
           </p>
         </Tile>
       </div>
+    </main>
+  );
+}
+
+function PlayerPicker({ profiles, onPick, onCreate }) {
+  const [adding, setAdding] = useState(profiles.length === 0);
+  const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('🦜');
+
+  if (adding) {
+    return (
+      <main className="px-5 pt-12">
+        <div className="text-center">
+          <Pip size={80} mood="wave" className="animate-wiggle" />
+          <h1 className="mt-4 text-3xl font-bold">Sound Safari</h1>
+          <p className="mt-2 text-inkSoft">
+            Hi! I am Pip. I repeat every sound you learn. What shall I call you?
+          </p>
+        </div>
+
+        <Tile className="mt-8">
+          <label className="text-sm font-semibold" htmlFor="learner-name">
+            Your name
+          </label>
+          <input
+            id="learner-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Ada"
+            maxLength={16}
+            className="mt-2 w-full rounded-2xl border-2 border-sand bg-paper px-4 py-3 text-lg outline-none focus:border-sky"
+          />
+
+          <p className="mt-5 text-sm font-semibold">Pick your buddy</p>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {AVATARS.map((a) => (
+              <button
+                key={a}
+                onClick={() => setAvatar(a)}
+                className={`rounded-2xl border-2 p-3 text-3xl ${
+                  avatar === a ? 'border-mango bg-mango/20' : 'border-sand bg-white'
+                }`}
+                aria-label={`Choose ${a}`}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+
+          <Block
+            tone="leaf"
+            size="lg"
+            className="mt-6"
+            disabled={!name.trim()}
+            onClick={() => onCreate(name.trim(), avatar)}
+          >
+            Start exploring
+          </Block>
+
+          {profiles.length > 0 && (
+            <button
+              onClick={() => setAdding(false)}
+              className="mt-4 w-full text-sm font-semibold text-inkSoft underline underline-offset-4"
+            >
+              Back to players
+            </button>
+          )}
+        </Tile>
+
+        <p className="mt-6 text-center text-xs text-inkSoft">
+          Nothing is sent anywhere — progress is saved on this device only.
+        </p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="px-5 pt-12">
+      <div className="text-center">
+        <Pip size={72} mood="wave" className="animate-wiggle" />
+        <h1 className="mt-4 text-2xl font-bold">Who&rsquo;s playing?</h1>
+        <p className="mt-1 text-inkSoft">Tap your buddy to jump back in.</p>
+      </div>
+
+      <div className="mt-8 grid grid-cols-2 gap-4">
+        {profiles.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onPick(p.id)}
+            className="flex flex-col items-center gap-2 rounded-blob border-2 border-sand bg-white p-5"
+            style={{ boxShadow: '0 6px 0 0 #EADBC2' }}
+          >
+            <span className="text-5xl">{p.avatar}</span>
+            <span className="truncate font-bold">{p.name}</span>
+          </button>
+        ))}
+        <button
+          onClick={() => setAdding(true)}
+          className="flex flex-col items-center justify-center gap-2 rounded-blob border-2 border-dashed border-sand bg-white/50 p-5 text-inkSoft"
+        >
+          <span className="text-4xl">➕</span>
+          <span className="text-sm font-semibold">New buddy</span>
+        </button>
+      </div>
+
+      <p className="mt-8 text-center text-xs text-inkSoft">
+        Nothing is sent anywhere — progress is saved on this device only.
+      </p>
     </main>
   );
 }

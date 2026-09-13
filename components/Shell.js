@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { BADGES, DAILY_GOAL, levelFor } from '@/lib/game';
 import { useProgress } from '@/lib/progress';
+import { useProfiles } from '@/lib/profiles';
 import { Bar, CelebrationOverlay } from './Ui';
 import { stopSpeaking } from '@/lib/audio';
 
@@ -15,6 +16,8 @@ const TABS = [
 
 export function StatusBar() {
   const { state, loaded } = useProgress();
+  const { profiles, switchPlayer } = useProfiles();
+  const router = useRouter();
   if (!loaded) return null;
   const lvl = levelFor(state.xp);
   const goal = Math.min(1, (state.today?.activities || 0) / DAILY_GOAL);
@@ -44,6 +47,19 @@ export function StatusBar() {
           <div className="text-xl leading-none">{state.streak.count > 0 ? '🔥' : '🌙'}</div>
           <div className="text-xs font-bold">{state.streak.count}</div>
         </div>
+        {profiles.length > 1 && (
+          <button
+            onClick={() => {
+              stopSpeaking();
+              switchPlayer();
+              router.push('/');
+            }}
+            className="shrink-0 text-xs font-semibold text-inkSoft underline underline-offset-4"
+            aria-label="Switch player"
+          >
+            Switch
+          </button>
+        )}
       </div>
       {goal < 1 && (
         <div className="mx-auto mt-2 max-w-md">
