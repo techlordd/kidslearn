@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="42" fill="#FFB020"/>
+  <circle cx="96" cy="96" r="62" fill="#FFF6E9"/>
+  <text x="96" y="126" font-family="Fredoka, Nunito, sans-serif" font-size="88" font-weight="700"
+        text-anchor="middle" fill="#231F3D">Aa</text>
+</svg>

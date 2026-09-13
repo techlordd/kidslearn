@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body {
+  background: #fff6e9;
+  color: #231f3d;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  /* A soft dotted savanna floor, so the page never feels like an empty form. */
+  background-image: radial-gradient(#f2e4ce 1.5px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+@layer components {
+  /* Chunky pressable block — the one interaction pattern used everywhere.
+     The thick bottom edge makes buttons feel physical to small fingers. */
+  .block {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-2xl font-semibold
+           transition-transform duration-100 select-none;
+    box-shadow: 0 5px 0 0 var(--edge, rgba(35, 31, 61, 0.25));
+  }
+  .block:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 0 var(--edge, rgba(35, 31, 61, 0.25));
+  }
+  .block:disabled {
+    @apply opacity-50;
+  }
+
+  .tile {
+    @apply bg-white rounded-blob border-2 border-sand;
+    box-shadow: 0 6px 0 0 #eadbc2;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold;
+  }
+}
+
+/* Big readable letters for the sound tiles */
+.letterface {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible {
+  outline: 3px solid #3d9be9;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
