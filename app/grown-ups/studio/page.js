@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { BackBar } from '@/components/Shell';
+import PinGate from '@/components/PinGate';
 import { Block, Loading, Pip, Tile } from '@/components/Ui';
 import { SUBJECTS } from '@/lib/curriculum';
 import { useProgress } from '@/lib/progress';
@@ -66,6 +67,7 @@ export default function StudioPage() {
   };
 
   return (
+    <PinGate>
     <main>
       <BackBar title="Studio" subtitle="Write new lessons with AI" to="/grown-ups" />
       <div className="px-5 pb-10 pt-4">
@@ -283,5 +285,6 @@ export default function StudioPage() {
         )}
       </div>
     </main>
+    </PinGate>
   );
 }

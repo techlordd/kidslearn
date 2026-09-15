@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBar } from '@/components/Shell';
+import PinGate from '@/components/PinGate';
 import { Bar, Block, Loading, Tile } from '@/components/Ui';
 import { GRADES, orderedTopics } from '@/lib/curriculum';
 import { summarise, useProgress } from '@/lib/progress';
@@ -18,11 +19,7 @@ export default function GrownUpsPage() {
   const topics = useMemo(() => orderedTopics('phonics', state.library), [state.library]);
   const stats = useMemo(() => summarise(state, topics), [state, topics]);
   const [confirmReset, setConfirmReset] = useState(false);
-
   const [pin, setPinState] = useState(null); // null = not loaded yet
-  const [unlocked, setUnlocked] = useState(false);
-  const [entry, setEntry] = useState('');
-  const [pinError, setPinError] = useState(false);
   const [editingPin, setEditingPin] = useState(false);
   const [newPin, setNewPin] = useState('');
 
@@ -32,47 +29,10 @@ export default function GrownUpsPage() {
 
   if (!loaded || pin === null) return <Loading />;
 
-  if (pin && !unlocked) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-5">
-        <p className="text-5xl">🔒</p>
-        <h1 className="mt-3 text-xl font-bold">Grown-ups only</h1>
-        <p className="mt-1 text-sm text-inkSoft">Enter the PIN to continue.</p>
-        <input
-          value={entry}
-          onChange={(e) => {
-            setEntry(e.target.value.replace(/\D/g, '').slice(0, 4));
-            setPinError(false);
-          }}
-          inputMode="numeric"
-          type="password"
-          maxLength={4}
-          autoFocus
-          className="mt-5 w-32 rounded-2xl border-2 border-sand bg-paper px-4 py-3 text-center text-2xl tracking-[0.5em] outline-none focus:border-sky"
-        />
-        {pinError && <p className="mt-2 text-sm font-semibold text-coral">That&rsquo;s not it — try again.</p>}
-        <Block
-          tone="leaf"
-          size="lg"
-          className="mt-5 max-w-xs"
-          disabled={entry.length !== 4}
-          onClick={() => {
-            if (entry === pin) setUnlocked(true);
-            else setPinError(true);
-          }}
-        >
-          Unlock
-        </Block>
-        <Link href="/" className="mt-6 text-sm font-semibold text-inkSoft underline underline-offset-4">
-          Back to playing
-        </Link>
-      </main>
-    );
-  }
-
   const lvl = levelFor(state.xp);
 
   return (
+    <PinGate>
     <main>
       <StatusBar />
       <div className="px-5 pb-10 pt-5">
@@ -344,5 +304,6 @@ export default function GrownUpsPage() {
         </div>
       </div>
     </main>
+    </PinGate>
   );
 }
