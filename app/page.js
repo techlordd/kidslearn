@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { StatusBar } from '@/components/Shell';
 import { AreaCard } from '@/components/Curriculum';
 import { Block, Loading, Pip, SpeechBubble, Tile } from '@/components/Ui';
-import { SUBJECT_AREAS, GRADES, orderedTopics } from '@/lib/curriculum';
+import { SUBJECT_AREAS, GRADES, allTopics, getTopic } from '@/lib/curriculum';
 import { useProgress, summarise } from '@/lib/progress';
 import { useProfiles, AVATARS } from '@/lib/profiles';
 import { DAILY_GOAL } from '@/lib/game';
@@ -13,7 +13,7 @@ export default function Home() {
   const { ready, profiles, activeId, selectProfile, createProfile } = useProfiles();
   const { state, loaded } = useProgress();
 
-  const topics = useMemo(() => orderedTopics('phonics', state.library), [state.library]);
+  const topics = useMemo(() => allTopics(state.library), [state.library]);
   const stats = useMemo(() => summarise(state, topics), [state, topics]);
 
   if (!ready) return <Loading />;
@@ -26,8 +26,11 @@ export default function Home() {
 
   if (!loaded) return <Loading />;
 
-  const nextUp = topics.find((t) => (state.topics[t.id]?.stars || 0) === 0) || topics[0];
-  const started = topics.some((t) => state.topics[t.id]?.lessonDone);
+  /* The most recent thing they actually did, whatever subject it was in —
+     a brand new profile (especially an older grade) shouldn't be pushed
+     straight into a Reception phonics lesson before they've even seen the
+     subject picker. */
+  const continueTopic = state.history[0] ? getTopic(state.history[0].topicId, state.library) : null;
 
   return (
     <main>
@@ -39,37 +42,37 @@ export default function Home() {
             <p className="text-sm">
               {stats.goalMet
                 ? `Today's goal is done, ${state.name}. Want to keep playing?`
-                : started
-                ? `Ready for ${nextUp.name}, ${state.name}?`
-                : `Let's start with our very first sound, ${state.name}.`}
+                : continueTopic
+                ? `Ready for ${continueTopic.name}, ${state.name}?`
+                : `Let's find something fun to learn, ${state.name}!`}
             </p>
           </SpeechBubble>
         </div>
 
-        <Tile className="mt-6 !p-0 overflow-hidden">
-          <div className="flex items-center gap-4 bg-mango/25 px-5 py-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-blob bg-white border-2 border-sand letterface text-4xl font-bold">
-              {nextUp.display}
+        {continueTopic && (
+          <Tile className="mt-6 !p-0 overflow-hidden">
+            <div className="flex items-center gap-4 bg-mango/25 px-5 py-5">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-blob bg-white border-2 border-sand letterface text-4xl font-bold">
+                {continueTopic.display}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wide text-inkSoft">
+                  Continue
+                </p>
+                <h2 className="truncate text-2xl font-bold">{continueTopic.name}</h2>
+                {continueTopic.sound && <p className="text-sm text-inkSoft">{continueTopic.sound}</p>}
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-inkSoft">
-                {started ? 'Next up' : 'Start here'}
-              </p>
-              <h2 className="truncate text-2xl font-bold">{nextUp.name}</h2>
-              <p className="text-sm text-inkSoft">
-                {nextUp.sound} · {nextUp.words.length} words
-              </p>
+            <div className="p-4">
+              <Block tone="leaf" size="lg" href={`/topic/${continueTopic.id}/lesson`}>
+                Keep learning
+              </Block>
             </div>
-          </div>
-          <div className="p-4">
-            <Block tone="leaf" size="lg" href={`/topic/${nextUp.id}/lesson`}>
-              {state.topics[nextUp.id]?.lessonDone ? 'Keep learning' : 'Start the lesson'}
-            </Block>
-          </div>
-        </Tile>
+          </Tile>
+        )}
 
         <div className="mt-4 grid grid-cols-3 gap-3">
-          <MiniStat label="Sounds" value={`${stats.mastered}/${stats.total}`} emoji="🔤" />
+          <MiniStat label="Topics" value={`${stats.mastered}/${stats.total}`} emoji="🏆" />
           <MiniStat label="Stars" value={stats.stars} emoji="⭐" />
           <MiniStat label="Streak" value={`${state.streak.count}d`} emoji="🔥" />
         </div>
