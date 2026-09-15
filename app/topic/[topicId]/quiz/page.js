@@ -70,7 +70,9 @@ export default function QuizPage() {
               <p className="text-sm font-semibold">Tip from Pip</p>
               <p className="mt-1 text-sm text-inkSoft">
                 {stars === 0
-                  ? `Let's hear ${topic.sound} again in the lesson, then try once more.`
+                  ? topic.sound
+                    ? `Let's hear ${topic.sound} again in the lesson, then try once more.`
+                    : "Let's go through the lesson again, then try once more."
                   : 'Another practice round makes three stars much easier.'}
               </p>
             </Tile>
@@ -91,10 +93,10 @@ export default function QuizPage() {
             </Block>
             {upNext && (
               <Block tone="sky" size="lg" href={`/topic/${upNext.id}/lesson`}>
-                Next sound: {upNext.name}
+                {topic.kind === 'maths' ? 'Next up' : 'Next sound'}: {upNext.name}
               </Block>
             )}
-            <Block tone="white" size="lg" href="/subject/phonics">
+            <Block tone="white" size="lg" href={`/subject/${topic.subject}`}>
               Back to the map
             </Block>
           </div>
@@ -132,8 +134,8 @@ export default function QuizPage() {
 function Missing() {
   return (
     <main>
-      <BackBar title="Quiz not found" to="/subject/phonics" />
-      <p className="px-5 pt-10 text-center text-inkSoft">Pick another sound to try.</p>
+      <BackBar title="Quiz not found" to="/" />
+      <p className="px-5 pt-10 text-center text-inkSoft">Pick another topic to try.</p>
     </main>
   );
 }

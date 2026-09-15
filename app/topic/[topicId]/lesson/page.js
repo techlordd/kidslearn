@@ -20,6 +20,7 @@ export default function LessonPage() {
 
   if (!loaded) return <Loading />;
   if (!topic) return <NotFound />;
+  if (topic.kind === 'maths') return <MathsLesson topic={topic} finishLesson={finishLesson} />;
 
   const steps = ['Meet the sound', 'Word wall', 'Blend it', 'Say it together'];
   const last = steps.length - 1;
@@ -163,12 +164,110 @@ export default function LessonPage() {
   );
 }
 
+function MathsLesson({ topic, finishLesson }) {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const steps = ['Learn it', 'Say it together'];
+  const last = steps.length - 1;
+  const example = topic.lesson.example;
+
+  const next = () => {
+    if (step < last) {
+      setStep(step + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      sfx.win();
+      finishLesson(topic.id);
+      router.push(`/topic/${topic.id}/practice`);
+    }
+  };
+
+  return (
+    <main>
+      <BackBar title={topic.name} subtitle={`Lesson · ${steps[step]}`} />
+      <div className="px-5 pb-8 pt-4">
+        <Bar value={(step + 1) / steps.length} tone="sky" />
+
+        {step === 0 && (
+          <section className="mt-6 text-center">
+            <p className="text-inkSoft">{topic.lesson.intro}</p>
+            <button
+              onClick={() => say(topic.lesson.intro, { rate: 0.75 })}
+              className="relative mx-auto mt-6 flex h-40 w-40 items-center justify-center rounded-blob border-4 border-sand bg-white"
+              style={{ boxShadow: '0 10px 0 0 #EADBC2' }}
+              aria-label={`Hear about ${topic.name}`}
+            >
+              <span className="absolute inset-0 rounded-blob bg-mango/40 animate-pulseRing" />
+              <span className="letterface relative text-6xl font-bold">{topic.display}</span>
+            </button>
+            <p className="mt-3 text-sm text-inkSoft">Tap to hear it again</p>
+
+            {example && (
+              <Tile className="mt-6 text-left">
+                <p className="text-sm font-semibold">Worked example</p>
+                <p className="mt-2 text-center text-inkSoft">{example.prompt}</p>
+                {example.show && <div className="mt-2 text-center text-5xl">{example.show}</div>}
+                {example.showWord && (
+                  <p className="mt-1 text-center text-2xl font-bold letterface tracking-wide">
+                    {example.showWord}
+                  </p>
+                )}
+                {example.grid && (
+                  <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-3xl">
+                    {example.grid.map((icon, i) => (
+                      <span key={i}>{icon}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-3 text-center text-lg font-bold text-leaf">
+                  Answer: {example.answer}
+                </p>
+              </Tile>
+            )}
+          </section>
+        )}
+
+        {step === 1 && (
+          <section className="mt-6 text-center">
+            <Pip size={64} className="animate-wiggle" />
+            <Tile className="mt-4 bg-mango/20">
+              <p className="text-2xl font-bold leading-snug">{topic.lesson.chant}</p>
+            </Tile>
+            <Block
+              tone="sky"
+              size="lg"
+              className="mt-5"
+              onClick={() => say(topic.lesson.chant, { rate: 0.7 })}
+            >
+              🔊 Say it with Pip
+            </Block>
+            <p className="mt-4 text-sm text-inkSoft">
+              Say it together, then try the practice round.
+            </p>
+          </section>
+        )}
+
+        <div className="mt-8 flex gap-3">
+          {step > 0 && (
+            <Block tone="white" onClick={() => setStep(step - 1)} className="px-5">
+              Back
+            </Block>
+          )}
+          <Block tone="leaf" size="lg" onClick={next} className="flex-1">
+            {step === last ? "I'm ready to practise" : 'Next'}
+          </Block>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 function NotFound() {
   return (
     <main>
-      <BackBar title="Lesson not found" to="/subject/phonics" />
+      <BackBar title="Lesson not found" to="/" />
       <p className="px-5 pt-10 text-center text-inkSoft">
-        This lesson is not on the map any more. Try picking another sound.
+        This lesson is not on the map any more. Try picking another topic.
       </p>
     </main>
   );

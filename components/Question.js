@@ -74,6 +74,14 @@ export default function Question({ question: q, mode = 'practice', onDone, strea
         </div>
       )}
 
+      {q.grid && (
+        <div className="flex flex-wrap items-center justify-center gap-2 rounded-blob bg-white/60 p-4 text-4xl">
+          {q.grid.map((icon, i) => (
+            <span key={i}>{icon}</span>
+          ))}
+        </div>
+      )}
+
       {q.listen && (
         <div className="flex justify-center">
           <Block

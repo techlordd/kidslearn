@@ -102,8 +102,8 @@ export default function PracticePage() {
 function Missing() {
   return (
     <main>
-      <BackBar title="Practice not found" to="/subject/phonics" />
-      <p className="px-5 pt-10 text-center text-inkSoft">Pick another sound to practise.</p>
+      <BackBar title="Practice not found" to="/" />
+      <p className="px-5 pt-10 text-center text-inkSoft">Pick another topic to practise.</p>
     </main>
   );
 }
