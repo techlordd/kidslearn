@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBar } from '@/components/Shell';
 import { Bar, Block, Loading, Tile } from '@/components/Ui';
-import { orderedTopics } from '@/lib/curriculum';
+import { GRADES, orderedTopics } from '@/lib/curriculum';
 import { summarise, useProgress } from '@/lib/progress';
 import { useProfiles, AVATARS } from '@/lib/profiles';
 import { getPin, setPin as savePin } from '@/lib/pin';
@@ -13,7 +13,7 @@ import { levelFor } from '@/lib/game';
 
 export default function GrownUpsPage() {
   const { state, loaded, setProfile, resetEverything } = useProgress();
-  const { profiles, activeId, deleteProfile, switchPlayer } = useProfiles();
+  const { profiles, activeId, activeProfile, updateProfile, deleteProfile, switchPlayer } = useProfiles();
   const router = useRouter();
   const topics = useMemo(() => orderedTopics('phonics', state.library), [state.library]);
   const stats = useMemo(() => summarise(state, topics), [state, topics]);
@@ -192,6 +192,22 @@ export default function GrownUpsPage() {
               </button>
             ))}
           </div>
+          <p className="mt-3 text-sm">Grade</p>
+          <div className="mt-2 flex gap-2">
+            {GRADES.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => activeId && updateProfile(activeId, { grade: g.id })}
+                className={`flex-1 rounded-2xl border-2 px-3 py-2 text-sm font-semibold ${
+                  (activeProfile?.grade || GRADES[0].id) === g.id
+                    ? 'border-mango bg-mango/20'
+                    : 'border-sand bg-white text-inkSoft'
+                }`}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
         </Tile>
 
         {profiles.length > 1 && (
@@ -207,6 +223,10 @@ export default function GrownUpsPage() {
                   <span className="text-2xl">{p.avatar}</span>
                   <span className="flex-1 truncate text-sm font-semibold">
                     {p.name}
+                    <span className="font-normal text-inkSoft">
+                      {' '}
+                      · {GRADES.find((g) => g.id === p.grade)?.name || GRADES[0].name}
+                    </span>
                     {p.id === activeId && <span className="text-inkSoft"> (this one)</span>}
                   </span>
                   <button

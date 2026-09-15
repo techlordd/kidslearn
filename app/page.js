@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { StatusBar } from '@/components/Shell';
-import { Block, Loading, Pip, SpeechBubble, Stars, Tile } from '@/components/Ui';
-import { SUBJECTS, orderedTopics } from '@/lib/curriculum';
+import { AreaCard } from '@/components/Curriculum';
+import { Block, Loading, Pip, SpeechBubble, Tile } from '@/components/Ui';
+import { SUBJECT_AREAS, GRADES, orderedTopics } from '@/lib/curriculum';
 import { useProgress, summarise } from '@/lib/progress';
 import { useProfiles, AVATARS } from '@/lib/profiles';
 import { DAILY_GOAL } from '@/lib/game';
@@ -76,8 +76,8 @@ export default function Home() {
 
         <h2 className="mt-8 text-lg font-bold">Choose a subject</h2>
         <div className="mt-3 space-y-3">
-          {SUBJECTS.map((s) => (
-            <SubjectRow key={s.id} subject={s} topics={topics} state={state} />
+          {SUBJECT_AREAS.map((a) => (
+            <AreaCard key={a.id} area={a} state={state} />
           ))}
         </div>
 
@@ -97,6 +97,7 @@ function PlayerPicker({ profiles, onPick, onCreate }) {
   const [adding, setAdding] = useState(profiles.length === 0);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('🦜');
+  const [grade, setGrade] = useState(GRADES[0].id);
 
   if (adding) {
     return (
@@ -138,12 +139,27 @@ function PlayerPicker({ profiles, onPick, onCreate }) {
             ))}
           </div>
 
+          <p className="mt-5 text-sm font-semibold">Grade (a grown-up can change this later)</p>
+          <div className="mt-2 flex gap-2">
+            {GRADES.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setGrade(g.id)}
+                className={`flex-1 rounded-2xl border-2 px-3 py-2 text-sm font-semibold ${
+                  grade === g.id ? 'border-mango bg-mango/20' : 'border-sand bg-white text-inkSoft'
+                }`}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+
           <Block
             tone="leaf"
             size="lg"
             className="mt-6"
             disabled={!name.trim()}
-            onClick={() => onCreate(name.trim(), avatar)}
+            onClick={() => onCreate(name.trim(), avatar, grade)}
           >
             Start exploring
           </Block>
@@ -208,43 +224,5 @@ function MiniStat({ label, value, emoji }) {
       <div className="mt-1 text-lg font-bold leading-none">{value}</div>
       <div className="text-xs text-inkSoft">{label}</div>
     </div>
-  );
-}
-
-function SubjectRow({ subject, topics, state }) {
-  const mine = subject.id === 'phonics' ? topics : [];
-  const done = mine.filter((t) => (state.topics[t.id]?.stars || 0) > 0).length;
-
-  if (!subject.ready) {
-    return (
-      <div className="flex items-center gap-4 rounded-blob border-2 border-dashed border-sand bg-white/50 p-4">
-        <div className="text-3xl opacity-60">{subject.emoji}</div>
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-inkSoft">{subject.name}</p>
-          <p className="text-xs text-inkSoft">{subject.tagline}</p>
-        </div>
-        <Link href="/grown-ups/studio" className="chip bg-sand text-xs">
-          Add with AI
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={`/subject/${subject.id}`}
-      className="flex items-center gap-4 rounded-blob border-2 border-sand bg-white p-4"
-      style={{ boxShadow: '0 6px 0 0 #EADBC2' }}
-    >
-      <div className="text-4xl">{subject.emoji}</div>
-      <div className="min-w-0 flex-1">
-        <p className="font-bold">{subject.name}</p>
-        <p className="text-xs text-inkSoft">{subject.tagline}</p>
-        <p className="mt-1 text-xs font-semibold text-leaf">
-          {done} of {mine.length} sounds mastered
-        </p>
-      </div>
-      <Stars count={Math.min(3, Math.floor((done / Math.max(1, mine.length)) * 3))} size="text-sm" />
-    </Link>
   );
 }
